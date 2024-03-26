@@ -1,6 +1,9 @@
+#pragma once
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <assert.h>
 
 
@@ -18,5 +21,9 @@ enum ERRORS {
 };
 
 
-void checkargs (int argc, char* argv[]);
-void report    (int error);
+void   report         (int error);
+int    setmode        (char* prefix);
+int    compress       (char* dict_name, char* filename);
+int    decompress     (char* dict_name, char* filename);
+int    train          (int argc, char* argv[]);
+void   checkargs      (int argc, char* argv[]);

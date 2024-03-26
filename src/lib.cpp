@@ -1,11 +1,24 @@
 #include "lib.hpp"
+#include "compress.cpp"
+#include "decompress.cpp"
+#include "train.cpp"
+
+
+int setmode(char* prefix)
+{
+    if (strcmp(prefix, "-d") == 0)
+        return DECOMPRESS;
+    else if (strcmp(prefix, "--train") == 0)
+        return TRAIN;
+    else return COMPRESS;
+}
 
 
 void checkargs(int argc, char* argv[])
 {
     if (argc < 2)
         report(NO_INPUT_FILE);
-    else if (argc > 2 && strcmp(argv[1], "--train"))
+    else if (argc > 3 && strcmp(argv[1], "--train"))
         report(MULT_COMPRESS);
 }
 
@@ -24,3 +37,4 @@ void report(int error)
             break;
     }
 }
+
