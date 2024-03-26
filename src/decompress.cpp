@@ -1,10 +1,10 @@
 #include "lib.hpp"
 
 
-int decompress(char* dict_name, char* filename)
+int decompress(char* dict_name, int argc, char* argv[])
 {
 
-    printf("Decompressing '%s' with dictionary '%s'\n", filename, dict_name);
+    printf("Decompressing '%s' with dictionary '%s'\n", argv[argc-1], dict_name);
 
     return 0; 
 }

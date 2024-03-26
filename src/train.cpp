@@ -2,10 +2,14 @@
 
 int train(int argc, char* argv[])
 {
-    for (int i = 2; i < argc; i++)
-    {
-        printf("File %d: %s\n", i-2, argv[i]);
-    }
+    printf("Training with files:\n\n");
+    int i = 0; 
+    int j = 0;
+    for (; i < argc; i++)
+        if(strcmp(argv[i], "-t")==0)
+            break;
+    for (i++;i < argc; i++, j++)
+        printf("FILE %d: %s\n", j, argv[i]);
     
     return 0;
 }

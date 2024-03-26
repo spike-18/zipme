@@ -11,18 +11,21 @@ int mode = COMPRESS;
 int main(int argc, char* argv[])
 {
 
-    checkargs(argc, argv);
-    mode = setmode(argv[1]);
-    
-    char* dict_name = NULL;
+    char* dict_name = checkargs(argc, argv);
+    mode = setmode(argc, argv);
 
+    #ifdef DEBUG
+    printf("Dictionary: %s\n", dict_name);
+    printf("Mode [ (%d)-comp, (%d)-decomp, (%d)-train ]: %d\n\n", COMPRESS, DECOMPRESS, TRAIN, mode);
+    #endif
+    
     switch (mode)
     {
         case COMPRESS:
-            compress(dict_name, argv[1]);
+            compress(dict_name, argc, argv);
             break;
         case DECOMPRESS:
-            decompress(dict_name, argv[2]);
+            decompress(dict_name, argc, argv);
             break;
         case TRAIN:
             train(argc, argv);
