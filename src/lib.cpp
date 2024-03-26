@@ -83,6 +83,7 @@ void print_help()
             "%5s-h\t\thelp\n"
             "%5s-d\t\tdecompress FILEs\n"
             "%5s-t\t\ttrain the dictionary on FILEs\n"
+            "\nUse 'train.sh' script to train with all files from directory."
             "\n", " ", " ", " "
     );
 }
