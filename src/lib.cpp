@@ -27,21 +27,33 @@ char* checkargs(int argc, char* argv[])
             exit(0);
         }   
 
-    for (int i = 1; i < argc-1; i++)
+    for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-d") == 0)
         {
-            if (strncmp(argv[i+1], "-", 1) == 0)
+            if (i+1 < argc && strncmp(argv[i+1], "-", 1) == 0)
                 report(NO_INPUT_FILE);
             else if (argc-1 - i >= 2)
                 report(MULT_COMPRESS);
         }
-        if (strcmp(argv[i], "-D") == 0)
+        if (i+1 < argc && strcmp(argv[i], "-D") == 0)
         {
             if (strncmp(argv[i+1], "-", 1) == 0)
                 report(NO_DICT);
             else if (i+2 > argc-1)
                 report(INV_SYNT);
+        }
+        if (strcmp(argv[i], "-t") == 0)
+        {
+            if (i == argc-1)
+                report(NO_INPUT_FILE);
+        }
+        if (strcmp(argv[i], "-r") == 0)
+        {
+            if (i+1 < argc && strncmp(argv[i+1], "-", 1) == 0)
+                report(NO_DIRECTORY);
+            else if (argc-1 - i >= 2)
+                report(MULT_DIR);
         }
     }
 
@@ -60,7 +72,7 @@ void report(int error)
     switch (error)
     {
         case NO_INPUT_FILE:
-            assert(!"No input file to compress."); 
+            assert(!"No input file(s)."); 
             break;
         case MULT_COMPRESS:
             assert(!"Cannot compress/decompress multiple files yet."); 
@@ -77,13 +89,15 @@ void report(int error)
 
 void print_help()
 {
-    printf( "Usage: zipme -D [DICT_FILE] [OPTION] [FILE]...\n\n"
+    printf( "Usage: zipme -D [DICT_FILE] -r [DIR] [OPTION] [FILE]...\n\n"
             "Default dictioanary is default.dict (if -D is omitted).\n\n"
             "Options:\n"
             "%5s-h\t\thelp\n"
             "%5s-d\t\tdecompress FILEs\n"
             "%5s-t\t\ttrain the dictionary on FILEs\n"
-            "\nUse 'train.sh' script to train with all files from directory."
+            // "_________________________________________\n"
+            // "%5s-r\t\ttrain on all files from the DIR\n"
+            "\nUse 'train.sh' script to train with all files from directory. "
             "\n", " ", " ", " "
     );
 }
