@@ -31,26 +31,26 @@ enum MODES {
 
 
 enum ERRORS {
-    NO_INPUT_FILE  = 1,
-    FILE_NOT_FOUND = 2,
-    MULT_COMPRESS  = 3,
-    NO_DICT        = 4,
-    INV_SYNT       = 5,
-    NO_DIRECTORY   = 6,
-    MULT_DIR       = 7,
+    NO_INPUT_FILE   = -1,
+    FILE_OPEN_ERROR = -2,
+    MULT_COMPRESS   = -3,
+    NO_DICT         = -4,
+    INV_SYNT        = -5,
+    NO_DIRECTORY    = -6,
+    MULT_DIR        = -7,
 };
 
 
 
 
-void          print_help     (void);
-void          report         (int error);
-int           setmode        (int argc, char* argv[]);
-int           train          (int argc, char* argv[]);
-char*         checkargs      (int argc, char* argv[]);
-char*         concatenate    (const char* dir, const char* name);
-void          add_phrase     (FILE* dict, long parent_index, char c);
-long          find_phrase    (FILE* dict, long parent_index, char c);
-int           compress       (char* dict_name, int argc, char* argv[]);
-int           decompress     (char* dict_name, int argc, char* argv[]);
+void    print_help  (void);
+void    report      (int error);
+int     setmode     (int argc, char* argv[]);
+int     train       (int argc, char* argv[]);
+char*   checkargs   (int argc, char* argv[]);
+char*   concatenate (const char* dir, const char* name);
+void    add_phrase  (FILE* dict, int parent_index, char c);
+int     find_phrase (FILE* dict, int parent_index, char c);
+int     compress    (char* dict_name, int argc, char* argv[]);
+int     decompress  (char* dict_name, int argc, char* argv[]);
      
