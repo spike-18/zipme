@@ -27,6 +27,8 @@ int train(int argc, char* argv[])
     {        
         char* file_path = (dir == NULL) ? argv[file_piv] : concatenate(dir, argv[file_piv]);    // Concatenate dir/filename to open file correctly
 
+        printf("\n");
+
         if ((training_set = fopen(file_path, "r")) != NULL)
         {
 
@@ -40,6 +42,7 @@ int train(int argc, char* argv[])
             
             while (c != EOF)
             {
+
                 index = find_phrase(dictionary, parent_index, c);                               // Recursive search for the longest overlap between
                                                                                                 // the inoput string and dictionaty values
                 if (index != -1)
@@ -68,87 +71,6 @@ int train(int argc, char* argv[])
 
 
 
-int find_phrase(FILE* dict, int parent_index, char c)
-{
-
-    int index = 0;
-
-    char* line        = NULL;
-    char* parent_line = NULL;
-    ssize_t len        = 0;
-    ssize_t parent_len = 0;
-    size_t  buf_size   = 0;
-    
-    rewind(dict);                                                                   // Find prefix from the start of dictionary
-    if (parent_index != -1)
-        for (int i = 0; i <= parent_index; i++)
-            parent_len = getline(&parent_line, &buf_size, dict);
-    buf_size = 0;
-        
-    rewind(dict);                                                                   // Start compairing prefix with dictionary
-    len = getline(&line, &buf_size, dict);                                          // entries from start of the file
-    
-    #ifdef DEBUG
-    {
-        printf(RED);
-        printf("CHAR %c\n", c);
-        printf(STD);
-    }
-    #endif
-
-    while (len != -1)
-    {
-
-        #ifdef DEBUG
-        {
-            printf("Prefix: ");
-            if (parent_line) for (int i = 0; parent_line[i]!='\n'; i++)
-                printf("%c", parent_line[i]);
-            if (line) printf(" Dict: ");
-            for (int i = 0; line[i]!='\n'; i++)
-                printf("%c", line[i]);
-            printf("\n");
-        }
-        #endif
-
-        if ( strncmp(line, parent_line, parent_len ? parent_len-1 : 0) == 0 )       // If prefix is found in dictionary
-        {                                                                           // or if it's empty
-
-            #ifdef DEBUG
-            {
-                printf(GRN);
-                printf("(PREFIX MATCH)\n");
-                printf(STD);
-            }
-            #endif
-
-            if (parent_index == -1 && line[0] == c)                                 // see if dictionary contains character
-                return index;                                                       // (if prefix is empty)
-            
-            if (len > parent_len && line[parent_len-1] == c)                        // see if the next characters after
-                return index;                                                       // the end of prefix are equal
-            
-            #ifdef DEBUG
-            {
-                if (len > parent_len)
-                printf("Need: %c, Found: %c\n", c, line[parent_len-1]);
-            }
-            #endif
-
-        }
-
-        index++;
-        len = getline(&line, &buf_size, dict);                                      // compare with next entry
-    }
-
-    free(line);
-    free(parent_line);
-
-    return -1;
-}
-
-
-
 void add_phrase(FILE* dict, int parent_index, char c)
 {
 
@@ -160,16 +82,23 @@ void add_phrase(FILE* dict, int parent_index, char c)
     rewind(dict);                                               // Find prefix from the start of
     if (parent_index != -1)                                     // dictionary, NULL if not found
         for (int i = 0; i <= parent_index; i++)
-            getline(&line, &len, dict);
+            getdelim(&line, &len, '\0', dict);
     
     fseek(dict, pos, SEEK_SET);                                 // Return back to where we've been
     
+    printf("|");
     if (line)                                                    // Put the prefix and the character                
-        for (int i = 0; line[i] != '\n'; i++)                   // into the end of the dict. file
+        for (int i = 0; line[i+1] != '\0'; i++)                   // into the end of the dict. file
+        {
             fputc(line[i], dict);
-        
+            printf("%c", line[i]);
+        }
+
+    printf("%c|\n", c);
+
     fputc(c, dict);
     fputc(10, dict);                                            // Entries are separated with '\n'
+    fputc('\0', dict);
     fflush(dict);
 
     #ifdef DEBUG
@@ -177,7 +106,7 @@ void add_phrase(FILE* dict, int parent_index, char c)
         printf(BLU);
         printf("Added: ");
         if (line)
-            for (int i = 0; line[i]!='\n'; i++)
+            for (int i = 0; line[i+1] != '\0'; i++)
                 printf("%c", line[i]);
         printf("%c\n", c);
         printf(STD);

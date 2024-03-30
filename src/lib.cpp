@@ -5,6 +5,88 @@
 
 
 
+int find_phrase(FILE* dict, int parent_index, char c)
+{
+
+    int index = 0;
+
+    char* line        = NULL;
+    char* parent_line = NULL;
+    ssize_t len        = 0;
+    ssize_t parent_len = 0;
+    size_t  buf_size   = 0;
+    
+    rewind(dict);                                                                   // Find prefix from the start of dictionary
+    if (parent_index != -1)
+        for (int i = 0; i <= parent_index; i++)
+            parent_len = getdelim(&parent_line, &buf_size, '\0', dict);
+    buf_size = 0;
+        
+    rewind(dict);                                                                   // Start compairing prefix with dictionary
+    len = getdelim(&line, &buf_size, '\0', dict);                                          // entries from start of the file
+    
+    #ifdef DEBUG
+    {
+        printf(RED);
+        printf("CHAR %c\n", c);
+        printf(STD);
+    }
+    #endif
+
+    while (len != -1)
+    {
+
+        #ifdef DEBUG
+        {
+            printf("Prefix: ");
+            if (parent_line) for (int i = 0; parent_line[i]!='\n'; i++)
+                printf("%c", parent_line[i]);
+            if (line) printf(" Dict: ");
+            for (int i = 0; line[i]!='\n'; i++)
+                printf("%c", line[i]);
+            printf("\n");
+        }
+        #endif
+
+        if ( strncmp(line, parent_line, parent_len ? parent_len-2 : 0) == 0 )       // If prefix is found in dictionary
+        {                                                                           // or if it's empty
+
+            #ifdef DEBUG
+            {
+                printf(GRN);
+                printf("(PREFIX MATCH)\n");
+                printf(STD);
+            }
+            #endif
+
+            if (parent_index == -1 && line[0] == c)                                 // see if dictionary contains character
+                return index;                                                       // (if prefix is empty)
+            
+            if (len > parent_len && line[parent_len-2] == c)                        // see if the next characters after
+                return index;                                                       // the end of prefix are equal
+            
+            #ifdef DEBUG
+            {
+                if (len > parent_len)
+                printf("Need: %c, Found: %c\n", c, line[parent_len-1]);
+            }
+            #endif
+
+        }
+
+        index++;
+        len = getdelim(&line, &buf_size, '\0', dict);                                          // entries from start of the file
+    }
+
+    free(line);
+    free(parent_line);
+
+    return -1;
+}
+
+
+
+
 int setmode(int argc, char* argv[])
 {
     for (int i = 0; i < argc; i++)

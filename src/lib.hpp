@@ -18,7 +18,6 @@
 #define CYN "\u001b[36;1m"
 #define WHT "\u001b[37;1m"
 
-
 #define INDEX_LN 4  // number of bytes to store index in compressed file
 
 
@@ -43,14 +42,15 @@ enum ERRORS {
 
 
 
-void    print_help  (void);
-void    report      (int error);
-int     setmode     (int argc, char* argv[]);
-int     train       (int argc, char* argv[]);
-char*   checkargs   (int argc, char* argv[]);
-char*   concatenate (const char* dir, const char* name);
-void    add_phrase  (FILE* dict, int parent_index, char c);
-int     find_phrase (FILE* dict, int parent_index, char c);
-int     compress    (char* dict_name, int argc, char* argv[]);
-int     decompress  (char* dict_name, int argc, char* argv[]);
+void    print_help      (void);
+void    report          (int error);
+int     setmode         (int argc, char* argv[]);
+int     train           (int argc, char* argv[]);
+char*   checkargs       (int argc, char* argv[]);
+char*   concatenate     (const char* dir, const char* name);
+void    add_phrase      (FILE* dict, int parent_index, char c);
+int     find_phrase     (FILE* dict, int parent_index, char c);
+int     compress        (char* dict_name, int argc, char* argv[]);
+int     decompress      (char* dict_name, int argc, char* argv[]);
+int     write_from_dict (FILE* file, FILE* dict, int parent_index, char c);
      
