@@ -55,13 +55,12 @@ int write_from_dict(FILE* file, FILE* dict, int parent_index, char c)
 {
 
     char*  line = NULL;
-    ssize_t len = 0;
     size_t  buf  = 0;
 
     rewind(dict);                                               // Find prefix from the start of
     if (parent_index != -1)                                     // dictionary, NULL if not found
         for (int i = 0; i <= parent_index; i++)
-            len = getdelim(&line, &buf, '\0', dict);
+            getdelim(&line, &buf, '\0', dict);
     
     if (line)                                                    // Put the prefix and the character                
         for (int i = 0; line[i+1] != '\0'; i++)                  // into the end of the dict. file
