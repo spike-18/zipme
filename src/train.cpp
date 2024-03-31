@@ -4,6 +4,9 @@
 int train(int argc, char* argv[])
 {
 
+    unsigned int dict_len = 0;                                                                  // store number of rows in dict
+
+
     char* dir       = NULL;     
     char* dict_path = NULL;
 
@@ -18,10 +21,15 @@ int train(int argc, char* argv[])
 
 
     if (dir != NULL)
+    {
         printf("Dictionary 'new.dict' will be created in '%s'.\n\n", dir);
+        dict_path = concatenate(dir, "new.dict");
+    }
     else
+    {
         printf("Dictionary 'default.dict' will be created current dir.\n\n");
-    dict_path = concatenate(dir, "new.dict");
+        dict_path = strdup("default.dict");
+    }
 
 
     FILE* dictionary = NULL;
@@ -31,6 +39,7 @@ int train(int argc, char* argv[])
         report(FILE_OPEN_ERROR);
     free(dict_path);
 
+
     for (int i = file_piv; i < argc; i++)                                                       // Train the dictionary on each file from the argument list
     {        
         char* file_path = (dir == NULL) ? argv[file_piv] : concatenate(dir, argv[file_piv]);    // Concatenate to 'dir/filename' to open file correctly
@@ -39,7 +48,15 @@ int train(int argc, char* argv[])
 
         if ((training_set = fopen(file_path, "r")) != NULL)
         {
-            free(file_path);
+            
+            // #ifdef DEBUG
+            unsigned long long charnum = 0; 
+            struct stat fs;
+            fstat(fileno(training_set), &fs);
+            // #endif
+            
+            
+            if(dir) free(file_path);
 
             int  index        = -1;                                                             // index == -1 is reserved for missing prefix in dictionary
             int  parent_index = -1;
@@ -49,6 +66,14 @@ int train(int argc, char* argv[])
 
             while (c != EOF)
             {
+                //
+                charnum++;
+                //
+
+                if(charnum%10000==0)
+                {
+                    printf("%d:\t %lld / %ld\n", dict_len, charnum, fs.st_size);
+                }
 
                 index = find_phrase(dictionary, parent_index, c);                               // Recursive search for the longest overlap between
                                                                                                 // the inoput string and dictionaty values
@@ -56,7 +81,14 @@ int train(int argc, char* argv[])
                     parent_index = index;
                 else
                 {
+                    if (dict_len == MAX_DICT_LEN)
+                    {
+                        printf("Dictionary length reached its limit.\n");
+                        exit(DICT_LEN_EXIT);
+                    }
+
                     add_phrase(dictionary, parent_index, c);
+                    dict_len++;
                     parent_index = -1;
                 }
                 c = (char) fgetc(training_set);

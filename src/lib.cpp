@@ -101,7 +101,7 @@ int setmode(int argc, char* argv[])
 }
 
 
-char* checkargs(int argc, char* argv[])
+void checkargs(int argc, char* argv[])
 {
     // Searches for expression mistakes
     if (argc < 2)
@@ -118,8 +118,6 @@ char* checkargs(int argc, char* argv[])
         {
             if (i+1 < argc && strncmp(argv[i+1], "-", 1) == 0)
                 report(NO_INPUT_FILE);
-            else if (argc-1 - i >= 2)
-                report(MULT_COMPRESS);
         }
         if (i+1 < argc && strcmp(argv[i], "-D") == 0)
         {
@@ -141,13 +139,7 @@ char* checkargs(int argc, char* argv[])
                 report(MULT_DIR);
         }
     }
-
-    // Finds the dictionary argument and return its name
-    for (int i = 1; i < argc-1; ++i)
-        if (strcmp(argv[i], "-D") == 0)
-            return argv[i+1];
     
-    return NULL;
 }
 
 
@@ -158,9 +150,6 @@ void report(int error)
     {
     case NO_INPUT_FILE:
         printf("No input file(s).\n"); 
-        break;
-    case MULT_COMPRESS:
-        printf("Cannot compress/decompress multiple files yet.\n"); 
         break;
     case NO_DICT:
         printf("No dictionary file proceeded.\n"); 
@@ -176,6 +165,9 @@ void report(int error)
         break;
     case FILE_OPEN_ERROR:
         printf("Could not open file.\n"); 
+        break;
+    case INDEX_LEN_ERROR:
+        printf("Indexes are stored in 4 bytes, but sizeof(int) is %ld\n", sizeof(int)); 
         break;
     default:
         break;
@@ -194,6 +186,7 @@ void print_help()
             "%5s-d\t\tdecompress FILEs\n"
             "%5s-t\t\ttrain the dictionary on FILEs\n"
 
+            "\nEXECUTE FILES ONLY FROM 'src' folder"
             "\nUse 'train.sh' script to train with all files from directory."
             "\n"
             "\nExamples:"
