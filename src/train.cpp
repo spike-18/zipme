@@ -36,14 +36,15 @@ int train(int argc, char* argv[])
         report(FILE_OPEN_ERROR);
     free(dict_path);
 
+    /// HASH
+    HashTable ht;
+    ht.table = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
+    initHashTable(&ht);
+    ///
 
     size_t buf_len = INIT_BUF_LEN;
     char*  buf     = (char*) calloc(buf_len, sizeof(char));
     char*  buf_new = buf;
-
-    int dict_len = 0;                                                                  // store number of rows in dict
-    char** DS = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
-
 
     for (int i = file_piv; i < argc; i++)                                                       // Train the dictionary on each file from the argument list
     {        
@@ -55,45 +56,42 @@ int train(int argc, char* argv[])
         if ((training_set = fopen(file_path, "r")) != NULL)
         {    
             
+            // DEBUG
+            
             int charnum = 0; 
             struct stat fs;
             fstat(fileno(training_set), &fs);
 
             
+
+
             if(dir) free(file_path);
 
-            int  index        = -1;                                                             // index == -1 is reserved for missing prefix in dictionary
-            int  parent_index = -1;
+            char*  index        = NULL;                                                             // index == -1 is reserved for missing prefix in dictionary
+            char*  parent_index = NULL;
             
             char c = (char) fgetc(training_set);                                                 
             
 
             while (c != EOF)
             {
+
                 /// DEBUG CODE
                 charnum++;
                 if(charnum%10000==0)
                 {
-                    printf("%d:\t %d / %ld\n", dict_len, charnum, fs.st_size);
+                    printf("%d / %ld\n", charnum, fs.st_size);
                 }
                 ///
 
+                index = find_phrase(&ht, parent_index, c);                               // Recursive search for the longest overlap between
 
-                index = find_phrase(DS, dict_len, parent_index, c);                               // Recursive search for the longest overlap between
-                                                                                                // the inoput string and dictionaty values
-                if (index != -1)
+                if (index != NULL)
                     parent_index = index;
                 else
                 {
-                    if (dict_len == MAX_DICT_LEN)
-                    {
-                        printf("Dictionary length reached its limit.\n");
-                        save_dict(dictionary, DS, dict_len);
-                        exit(DICT_LEN_EXIT);
-                    }
-
-                    add_phrase(&buf_new, DS, &dict_len, parent_index, c);
-                    parent_index = -1;
+                    add_phrase(&buf_new, &ht, parent_index, c);
+                    parent_index = NULL;
                 }
                 c = (char) fgetc(training_set);
             }
@@ -114,31 +112,30 @@ int train(int argc, char* argv[])
 
     }
 
-    save_dict(dictionary, DS, dict_len);
-    // print_dict(DS, dict_len);
+    save_dict(dictionary, &ht);
+    // print_dict(&ht);
     fclose(dictionary);
     free(buf);
-    free(DS);
+    free(ht.table);
 
     return 0;
 }
 
 
 
-void add_phrase(char** buf_new, char** dict, int* dict_len, int parent_index, char c)
+void add_phrase(char** buf_new, HashTable* ht, char* parent_index, char c)
 {
 
-    dict[*dict_len] = *buf_new;
-    *dict_len += 1;
-
+    char* entry = *buf_new;
                                                                 // Find prefix from the start of
-    if (parent_index != -1)                                     // dictionary, NULL if not found
-        *buf_new = print_to_buf(*buf_new, dict[parent_index]);
+    if (parent_index != NULL)                                     // dictionary, NULL if not found
+        *buf_new = print_to_buf(*buf_new, parent_index);
 
     (*buf_new)[0] = c;
     (*buf_new)[1] = '\0';
-    *buf_new = *buf_new+2;
+    insert(ht, entry);
 
+    *buf_new = *buf_new+2;
 }
 
 
@@ -178,11 +175,12 @@ char* print_to_buf(char* buf_new, char* str)
     return buf_new+i;
 }
 
-void save_dict(FILE* dictionary, char** DS, int dict_len)
+void save_dict(FILE* dictionary, HashTable* ht)
 {
-    for (int i = 0; i < dict_len; i++)
-    {
-        fputs(DS[i], dictionary);
-        fputc('\0', dictionary);
-    }
+    for (int i = 0; i < MAX_DICT_LEN; i++)
+        if (ht->table[i] != NULL)
+        {
+            fputs(ht->table[i], dictionary);
+            fputc('\0', dictionary);
+        }
 }

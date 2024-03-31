@@ -47,10 +47,12 @@ int compress(int argc, char* argv[])
     const size_t buf_len = file_info.st_size / sizeof(char);
     char*  buf     = (char*) calloc(buf_len, sizeof(char)); 
 
-    int dict_len = 0;  
-    char** DS = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
-    read_dict(dictionary, DS, &dict_len, buf);
-    // print_dict(DS, dict_len);
+
+    HashTable ht;
+    ht.table = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
+    initHashTable(&ht);
+    read_dict(dictionary, &ht, buf);
+    // print_dict(&ht);
 
 
     for (int i = file_piv; i < argc; i++)                                                       // Compress each file to file_#.com
@@ -63,46 +65,33 @@ int compress(int argc, char* argv[])
         if ((file = fopen(argv[i], "r")) != NULL && (compressed_file = fopen(file_name, "w+")) != NULL)
         {
 
-
-            int charnum = 0; 
-            struct stat fs;
-            fstat(fileno(file), &fs);
-
-            int  index        = -1;                                                             // index == -1 is reserved for 
-            int  parent_index = -1;                                                             // missing prefix in dictionary
+            int    code = 0;
+            char*  index        = NULL;                                                             // index == -1 is reserved for 
+            char*  parent_index = NULL;                                                             // missing prefix in dictionary
 
             char c = (char) fgetc(file);    
             
             while (c != EOF)
             {
-
-
-                /// DEBUG CODE
-                charnum++;
-                if(charnum%10000==0)
-                {
-                    printf("\r%d / %ld\n", charnum, fs.st_size);
-                }
-                ///
-
-
-                index = find_phrase(DS, dict_len, parent_index, c);  
+                index = find_phrase(&ht, parent_index, c);  
                 
-                if (index != -1)
+                if (index != NULL)
                     parent_index = index;
                 else
                 {
-                    fwrite(&parent_index, 1, INDEX_LN, compressed_file);
+                    code = get_index(parent_index);
+                    fwrite(&code, 1, INDEX_LN, compressed_file);
                     fwrite(&c, 1, sizeof(char), compressed_file);
-                    parent_index = -1;
+                    parent_index = NULL;
                 }
                 c = (char) fgetc(file);
             }
 
-            if (parent_index != -1)
+            if (parent_index != NULL)
             {
                 char escape = '\0';
-                fwrite(&parent_index, 1, INDEX_LN, compressed_file);
+                code = get_index(parent_index);
+                fwrite(&code, 1, INDEX_LN, compressed_file);
                 fwrite(&escape, 1, sizeof(char), compressed_file);
             }
 
@@ -127,7 +116,7 @@ int compress(int argc, char* argv[])
 
     fclose(dictionary);
     free(buf);
-    free(DS);
+    free(ht.table);
 
     return 0; 
 }

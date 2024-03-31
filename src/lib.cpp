@@ -5,65 +5,116 @@
 
 
 
-int find_phrase(char** dict, int dict_len, int parent_index, char c)
+char* find_phrase(HashTable* ht, char* parent_index, char c)
 {
 
-    if (parent_index!=-1)
+    if (parent_index != NULL)
     {
-        int parent_len = 0;
-        for (size_t i = 0; dict[parent_index][i] != '\0'; i++)
-            parent_len++;
-
-        for (int i = 0; i < dict_len; i++)
-        {
-            if (strncmp(dict[i], dict[parent_index], parent_len) == 0)
-                if(dict[i][parent_len] == c)
-                    return i;
-        }
+        char str[MAX_STRING_LEN] = "";
+        strcat(str, parent_index);
+        char charStr[2] = {c, '\0'};
+        strcat(str,charStr);
+        
+        char* ind = retrieve(ht, str);
+        if (ind != NULL)
+            return ind;
     }
+
     else
     {
-        for (int i = 0; i < dict_len; i++)
-            if (dict[i][0] == c)
-                return i;
+        char charStr[2] = {c, '\0'};
+        char* ind = retrieve(ht, charStr);
+        if (ind != NULL)
+            return ind;
     }
     
-    return -1;
+    return NULL;
 }
 
 
-void read_dict (FILE* dictionary, char** DS, int* dict_len, char* buf)
+void initHashTable(HashTable *ht) {
+    for (int i = 0; i < MAX_DICT_LEN; ++i) {
+        ht->table[i] = NULL;
+    }
+}
+
+
+unsigned int hash(const char *key) {
+    unsigned int hashVal = 0;
+    while (*key) {
+        hashVal = (hashVal << 5) + *key++;
+    }
+    return hashVal % MAX_DICT_LEN;
+}
+
+
+void insert(HashTable *ht, char *key) {
+    unsigned int index = hash(key);
+    //printf("insert %d, %s\n", index, key);
+    ht->table[index] = key; // Store value directly in table
+}
+
+
+char *retrieve(HashTable *ht, const char *key) {
+    unsigned int index = hash(key);
+    char* entry = ht->table[index];
+    // printf("%s - %s\n", key, entry);
+    if (entry != NULL) {
+        return entry;
+    }
+    return NULL; // Key not found
+}
+
+int get_index (const char* key)
 {
-    DS[0] = buf;
-    *dict_len += 1;
+    if (key == NULL)
+        return -1;
+    unsigned int index = hash(key);
+    return index;
+}
 
+
+
+void read_dict (FILE* dictionary, HashTable* ht, char* buf)
+{
     char c = (char) fgetc(dictionary);                                                 
-    buf[0] = c;
-    int i = 1;
-
-    c = (char) fgetc(dictionary);
+    int i = 0;
+    
     while (c != EOF)
     {
         buf[i] = c;
-
-        if (buf[i-1] == '\0')
-        {
-            DS[*dict_len] = buf+i;
-            *dict_len += 1;
-        }
-        i++;
-
         c = (char) fgetc(dictionary);
+        i++;
     }
 
+    insert(ht, buf);
+    for (int j = 1; j < i-1; j++)
+        if (buf[j-1]=='\0')
+            insert(ht, buf+j);
+            
 }
 
 
-void print_dict(char** DS, int dict_len)
+void print_dict(HashTable* ht)
 {
-    for (int i = 0; i < dict_len; i++)
-        printf("%s",DS[i]);
+    printf("______\n");
+    for (int i = 0; i < MAX_DICT_LEN; i++)
+        if (ht->table[i] != NULL)
+        {
+            printf("%d - %s\n", i, ht->table[i]);
+        }
+    printf("______\n");
+    
+
 }
+
+
+
+int len_sort(const char *a, const char *b)
+{
+    return strlen(a) < strlen(b) ? -1 : 1;
+}
+
 
 
 int setmode(int argc, char* argv[])
@@ -176,3 +227,5 @@ void print_help()
             "\n", " ", " ", " "
     );
 }
+
+
