@@ -27,6 +27,8 @@ int main(int argc, char* argv[])
     printf("Mode [ (%d)-comp, (%d)-decomp, (%d)-train ]: %d\n\n", COMPRESS, DECOMPRESS, TRAIN, mode);
     #endif
     
+
+
     switch (mode)
     {
         case COMPRESS:

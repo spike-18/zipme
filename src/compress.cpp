@@ -32,12 +32,25 @@ int compress(int argc, char* argv[])
     FILE* file = NULL;
     FILE* compressed_file = NULL;
     
-    
+
     if ((dictionary = fopen(dict_path, "r")) == NULL)
         report(FILE_OPEN_ERROR);
     
     if (!custom_dict)
         free(dict_path);
+
+
+
+    struct stat file_info = {};
+    fstat( fileno(dictionary), &file_info );
+
+    const size_t buf_len = file_info.st_size / sizeof(char);
+    char*  buf     = (char*) calloc(buf_len, sizeof(char)); 
+
+    int dict_len = 0;  
+    char** DS = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
+    read_dict(dictionary, DS, &dict_len, buf);
+    // print_dict(DS, dict_len);
 
 
     for (int i = file_piv; i < argc; i++)                                                       // Compress each file to file_#.com
@@ -50,6 +63,11 @@ int compress(int argc, char* argv[])
         if ((file = fopen(argv[i], "r")) != NULL && (compressed_file = fopen(file_name, "w+")) != NULL)
         {
 
+
+            int charnum = 0; 
+            struct stat fs;
+            fstat(fileno(file), &fs);
+
             int  index        = -1;                                                             // index == -1 is reserved for 
             int  parent_index = -1;                                                             // missing prefix in dictionary
 
@@ -57,7 +75,18 @@ int compress(int argc, char* argv[])
             
             while (c != EOF)
             {
-                index = find_phrase(dictionary, parent_index, c);  
+
+
+                /// DEBUG CODE
+                charnum++;
+                if(charnum%10000==0)
+                {
+                    printf("\r%d / %ld\n", charnum, fs.st_size);
+                }
+                ///
+
+
+                index = find_phrase(DS, dict_len, parent_index, c);  
                 
                 if (index != -1)
                     parent_index = index;
@@ -96,8 +125,9 @@ int compress(int argc, char* argv[])
     
     }
 
-
     fclose(dictionary);
+    free(buf);
+    free(DS);
 
     return 0; 
 }

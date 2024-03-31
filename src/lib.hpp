@@ -21,7 +21,9 @@
 #define WHT "\u001b[37;1m"
 
 #define INDEX_LN        4              // number of bytes to store index in compressed file
-#define MAX_DICT_LEN    INT_MAX        // max number of values in dictionary
+#define MAX_DICT_LEN    110000        // max number of values in dictionary
+#define INIT_BUF_LEN    INT_MAX        // initial buffer length to store dictionary
+
 
 
 enum MODES {
@@ -53,7 +55,11 @@ int     train           (int argc, char* argv[]);
 int     compress        (int argc, char* argv[]);
 int     decompress      (int argc, char* argv[]);
 char*   concatenate     (const char* dir, const char* name);
-void    add_phrase      (FILE* dict, int parent_index, char c);
-int     find_phrase     (FILE* dict, int parent_index, char c);
-int     write_from_dict (FILE* file, FILE* dict, int parent_index, char c);
+void    add_phrase      (char** buf_new, char** dict, int* dict_len, int parent_index, char c);
+int     find_phrase     (char** dict, int dict_len, int parent_index, char c);
+int     write_from_dict(FILE* file, char** dict, int parent_index, char c);
+char*   print_to_buf    (char* buf_new, char* str);
+void    save_dict       (FILE* dictionary, char** DS, int dict_len);
+void print_dict(char** DS, int dict_len);
+void read_dict (FILE* dictionary, char** DS, int* dict_len, char* buf);
      

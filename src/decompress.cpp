@@ -38,6 +38,17 @@ int decompress(int argc, char* argv[])
         free(dict_path);
 
 
+    struct stat file_info = {};
+    fstat( fileno(dictionary), &file_info );
+
+    const size_t buf_len = file_info.st_size / sizeof(char);
+    char*  buf     = (char*) calloc(buf_len, sizeof(char)); 
+
+    int dict_len = 0;  
+    char** DS = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
+    read_dict(dictionary, DS, &dict_len, buf);
+
+
     for (int i = file_piv; i < argc; i++)                                                       // Decompress each file to file_#.dec
     {        
         printf("FILE %d: %20s\t", i-file_piv, argv[i]);
@@ -59,7 +70,7 @@ int decompress(int argc, char* argv[])
 
                 fread(&c, 1, sizeof(char), compressed_file);
 
-                write_from_dict(decompressed_file, dictionary, parent_index, c);
+                write_from_dict(decompressed_file, DS, parent_index, c);
             }
 
             fclose(compressed_file);
@@ -81,30 +92,20 @@ int decompress(int argc, char* argv[])
 
 
     fclose(dictionary);
+    free(buf);
+    free(DS);
 
     return 0; 
 }
 
 
-int write_from_dict(FILE* file, FILE* dict, int parent_index, char c)
+int write_from_dict(FILE* file, char** dict, int parent_index, char c)
 {
 
-    char*  line = NULL;
-    size_t  buf  = 0;
-
-    rewind(dict);                                                                               // Find prefix from the start of
     if (parent_index != -1)                                                                     // dictionary
-        for (int i = 0; i <= parent_index; i++)
-            getdelim(&line, &buf, '\0', dict);
+        fputs(dict[parent_index], file);
     
-    if (line)                                                                                   // Put the prefix and the character                
-        for (int i = 0; line[i+1] != '\0'; i++)                                                 // into the end of the file
-            fputc(line[i], file);
-        
     if(c) fputc(c, file);
-
-
-    free(line);
 
     return 0;
 }

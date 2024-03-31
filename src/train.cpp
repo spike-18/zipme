@@ -4,9 +4,6 @@
 int train(int argc, char* argv[])
 {
 
-    unsigned int dict_len = 0;                                                                  // store number of rows in dict
-
-
     char* dir       = NULL;     
     char* dict_path = NULL;
 
@@ -40,21 +37,28 @@ int train(int argc, char* argv[])
     free(dict_path);
 
 
+    size_t buf_len = INIT_BUF_LEN;
+    char*  buf     = (char*) calloc(buf_len, sizeof(char));
+    char*  buf_new = buf;
+
+    int dict_len = 0;                                                                  // store number of rows in dict
+    char** DS = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
+
+
     for (int i = file_piv; i < argc; i++)                                                       // Train the dictionary on each file from the argument list
     {        
+
         char* file_path = (dir == NULL) ? argv[file_piv] : concatenate(dir, argv[file_piv]);    // Concatenate to 'dir/filename' to open file correctly
 
         printf("FILE %d: %20s\t", i-file_piv, argv[i]);
 
         if ((training_set = fopen(file_path, "r")) != NULL)
-        {
+        {    
             
-            // #ifdef DEBUG
-            unsigned long long charnum = 0; 
+            int charnum = 0; 
             struct stat fs;
             fstat(fileno(training_set), &fs);
-            // #endif
-            
+
             
             if(dir) free(file_path);
 
@@ -66,16 +70,16 @@ int train(int argc, char* argv[])
 
             while (c != EOF)
             {
-                //
+                /// DEBUG CODE
                 charnum++;
-                //
-
                 if(charnum%10000==0)
                 {
-                    printf("%d:\t %lld / %ld\n", dict_len, charnum, fs.st_size);
+                    printf("%d:\t %d / %ld\n", dict_len, charnum, fs.st_size);
                 }
+                ///
 
-                index = find_phrase(dictionary, parent_index, c);                               // Recursive search for the longest overlap between
+
+                index = find_phrase(DS, dict_len, parent_index, c);                               // Recursive search for the longest overlap between
                                                                                                 // the inoput string and dictionaty values
                 if (index != -1)
                     parent_index = index;
@@ -84,11 +88,11 @@ int train(int argc, char* argv[])
                     if (dict_len == MAX_DICT_LEN)
                     {
                         printf("Dictionary length reached its limit.\n");
+                        save_dict(dictionary, DS, dict_len);
                         exit(DICT_LEN_EXIT);
                     }
 
-                    add_phrase(dictionary, parent_index, c);
-                    dict_len++;
+                    add_phrase(&buf_new, DS, &dict_len, parent_index, c);
                     parent_index = -1;
                 }
                 c = (char) fgetc(training_set);
@@ -110,54 +114,31 @@ int train(int argc, char* argv[])
 
     }
 
+    save_dict(dictionary, DS, dict_len);
+    // print_dict(DS, dict_len);
     fclose(dictionary);
+    free(buf);
+    free(DS);
 
     return 0;
 }
 
 
 
-void add_phrase(FILE* dict, int parent_index, char c)
+void add_phrase(char** buf_new, char** dict, int* dict_len, int parent_index, char c)
 {
 
-    long   pos  = ftell(dict);                                  // Save start file pointer position
+    dict[*dict_len] = *buf_new;
+    *dict_len += 1;
 
-    char*  line = NULL;
-    size_t len  = 0;
-
-    rewind(dict);                                               // Find prefix from the start of
+                                                                // Find prefix from the start of
     if (parent_index != -1)                                     // dictionary, NULL if not found
-        for (int i = 0; i <= parent_index; i++)                 // values in dictionary are stored
-            getdelim(&line, &len, '\0', dict);                  // in format 'data\n\0' - '\n' for
-                                                                // better visibility
+        *buf_new = print_to_buf(*buf_new, dict[parent_index]);
 
-    
-    fseek(dict, pos, SEEK_SET);                                 // Return back to where we've been
-    
-    if (line)                                                   // Put the prefix and the character                
-        for (int i = 0; line[i+1] != '\0'; i++)                 // into the end of the dict. file
-        {
-            fputc(line[i], dict);
-        }
+    (*buf_new)[0] = c;
+    (*buf_new)[1] = '\0';
+    *buf_new = *buf_new+2;
 
-    fputc(c, dict);
-    fputc(10, dict);                                            // Entries are separated with '\n\0'
-    fputc('\0', dict);
-    fflush(dict);
-
-    #ifdef DEBUG
-    {
-        printf(BLU);
-        printf("Added: ");
-        if (line)
-            for (int i = 0; line[i+1] != '\0'; i++)
-                printf("%c", line[i]);
-        printf("%c\n", c);
-        printf(STD);
-    }
-    #endif
-
-    free(line);
 }
 
 
@@ -186,4 +167,22 @@ char* concatenate(const char* dir, const char* name)
     }
     else
         return strdup("default.dict");
+}
+
+char* print_to_buf(char* buf_new, char* str)
+{
+    size_t i = 0;
+    for (; str[i] != '\0'; i++)
+        buf_new[i] = str[i];
+
+    return buf_new+i;
+}
+
+void save_dict(FILE* dictionary, char** DS, int dict_len)
+{
+    for (int i = 0; i < dict_len; i++)
+    {
+        fputs(DS[i], dictionary);
+        fputc('\0', dictionary);
+    }
 }
