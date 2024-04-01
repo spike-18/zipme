@@ -141,14 +141,6 @@ int get_index (HashTable* ht, const char* key)
 }
 
 
-unsigned int hash(const char *key) {
-    unsigned int hashVal = 0;
-    while (*key) {
-        hashVal = (hashVal << 5) + *key++;
-    }
-    return hashVal % MAX_DICT_LEN;
-}
-
 
 void read_dict (FILE* dictionary, HashTable* ht, char* buf)
 {

@@ -47,24 +47,15 @@ int train(int argc, char* argv[])
     char*  buf_new  = buf;
     int    dict_len = 0;
 
-    for (int i = file_piv; i < argc; i++)                                                       // Train the dictionary on each file from the argument list
+    for (int i = file_piv; i < argc; i++)                                                 // Train the dictionary on each file from the argument list
     {        
 
-        char* file_path = (dir == NULL) ? argv[file_piv] : concatenate(dir, argv[file_piv]);    // Concatenate to 'dir/filename' to open file correctly
-
+        char* file_path = (dir == NULL) ? strdup(argv[file_piv]) : concatenate(dir, argv[file_piv]); // Allocate memory only when using concatenate
         printf("FILE %d: %20s\t", i-file_piv, argv[i]);
 
         if ((training_set = fopen(file_path, "r")) != NULL)
         {    
             
-            // // DEBUG
-            
-            int charnum = 0; 
-            struct stat fs;
-            fstat(fileno(training_set), &fs);
-
-
-            if(dir) free(file_path);
 
             char*  index        = NULL;                                                             // index == -1 is reserved for missing prefix in dictionary
             char*  parent_index = NULL;
@@ -74,14 +65,6 @@ int train(int argc, char* argv[])
 
             while (c != EOF)
             {
-
-                /// DEBUG CODE
-                charnum++;
-                if(charnum%10000==0)
-                {
-                    printf("%d / %ld\n", charnum, fs.st_size);
-                }
-                ///
 
                 if (dict_len == MAX_DICT_LEN)
                     break;
@@ -112,6 +95,8 @@ int train(int argc, char* argv[])
             printf("error\n");
             printf(STD);
         }
+
+        free(file_path);
 
     }
 
