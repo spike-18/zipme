@@ -2,7 +2,7 @@
 #include "compress.cpp"
 #include "decompress.cpp"
 #include "train.cpp"
-
+#include "hash.cpp"
 
 
 char* find_phrase(HashTable* ht, char* parent_index, char c)
@@ -16,7 +16,7 @@ char* find_phrase(HashTable* ht, char* parent_index, char c)
         strcat(str,charStr);
         
         char* ind = retrieve(ht, str);
-        if (ind != NULL)
+        if (ind != NULL) //
             return ind;
     }
 
@@ -24,7 +24,7 @@ char* find_phrase(HashTable* ht, char* parent_index, char c)
     {
         char charStr[2] = {c, '\0'};
         char* ind = retrieve(ht, charStr);
-        if (ind != NULL)
+        if (ind != NULL) //
             return ind;
     }
     
@@ -33,9 +33,111 @@ char* find_phrase(HashTable* ht, char* parent_index, char c)
 
 
 void initHashTable(HashTable *ht) {
-    for (int i = 0; i < MAX_DICT_LEN; ++i) {
+    for (size_t i = 0; i < MAX_DICT_LEN; ++i) {
         ht->table[i] = NULL;
     }
+}
+
+
+void insert(HashTable *ht, char *key) {
+    unsigned int index = fnv1_hash(key);
+    HashEntry *newEntry = (HashEntry *)malloc(sizeof(HashEntry));
+    if (newEntry == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    newEntry->value = key;
+    newEntry->next = NULL; // Initialize next pointer to NULL
+
+    if (ht->table[index] == NULL)
+    {
+        newEntry->uindex = index;
+        ht->table[index] = newEntry;
+    }
+    else 
+    {
+        newEntry->uindex = replace(ht, key);
+        HashEntry *current = ht->table[index];
+        while (current->next != NULL) {
+            current = current->next;
+        }
+        current->next = newEntry;
+    }
+
+}
+
+
+char* retrieve(HashTable *ht, const char *key) {
+    unsigned int index = fnv1_hash(key);
+    HashEntry* entry = ht->table[index];
+    while (entry != NULL) {
+        if (strcmp(entry->value, key) == 0) {
+            return entry->value;
+        }
+        entry = entry->next;
+    }
+    return NULL; // Key not found
+}
+
+
+int replace(HashTable* ht, char* key)
+{
+    unsigned int index = hash(key);
+    unsigned int nextIndex = (index + 1) % MAX_DICT_LEN;
+    unsigned int prevIndex = (index - 1) % MAX_DICT_LEN;
+
+    while (nextIndex != prevIndex)
+        if (ht->table[nextIndex]==NULL)
+        {
+            HashEntry *newEntry = (HashEntry *)malloc(sizeof(HashEntry));
+            if (newEntry == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                exit(1);
+            }
+            newEntry->value = key;
+            newEntry->uindex = nextIndex;
+            newEntry->next = NULL;
+            ht->table[nextIndex] = newEntry;
+            return nextIndex;
+        }  
+        else if (ht->table[prevIndex]==NULL)
+        {
+            HashEntry *newEntry = (HashEntry *)malloc(sizeof(HashEntry));
+            if (newEntry == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                exit(1);
+            }
+            newEntry->value = key;
+            newEntry->uindex = prevIndex;
+            newEntry->next = NULL;
+            ht->table[prevIndex] = newEntry;
+            return prevIndex;
+        }
+        else
+        {
+            nextIndex = (nextIndex + 1) % MAX_DICT_LEN;
+            prevIndex = (prevIndex - 1) % MAX_DICT_LEN;
+        }
+
+
+    return 0;
+}
+
+
+int get_index (HashTable* ht, const char* key)
+{
+    if (key == NULL)
+        return -1;
+    unsigned int index = fnv1_hash(key);
+    HashEntry* entry = ht->table[index];
+    while (entry != NULL) {
+        if (strcmp(entry->value, key) == 0) {
+            return entry->uindex;
+        }
+        entry = entry->next;
+    }
+
+    return -1;
 }
 
 
@@ -48,71 +150,109 @@ unsigned int hash(const char *key) {
 }
 
 
-void insert(HashTable *ht, char *key) {
-    unsigned int index = hash(key);
-    //printf("insert %d, %s\n", index, key);
-    ht->table[index] = key; // Store value directly in table
-}
-
-
-char *retrieve(HashTable *ht, const char *key) {
-    unsigned int index = hash(key);
-    char* entry = ht->table[index];
-    // printf("%s - %s\n", key, entry);
-    if (entry != NULL) {
-        return entry;
-    }
-    return NULL; // Key not found
-}
-
-int get_index (const char* key)
-{
-    if (key == NULL)
-        return -1;
-    unsigned int index = hash(key);
-    return index;
-}
-
-
-
 void read_dict (FILE* dictionary, HashTable* ht, char* buf)
 {
-    char c = (char) fgetc(dictionary);                                                 
+    int index = 0;
     int i = 0;
+    char c;
     
-    while (c != EOF)
+    while (1)
     {
-        buf[i] = c;
-        c = (char) fgetc(dictionary);
-        i++;
+
+        if (fread(&index, sizeof(int), 1, dictionary) != 1)
+            break;
+
+        do
+        {
+            HashEntry *newEntry = (HashEntry *)malloc(sizeof(HashEntry));
+            fread(&(newEntry->uindex), sizeof(int), 1, dictionary);
+            newEntry->value = buf + i;
+
+            c = (char) fgetc(dictionary);
+            
+            while(c!='\0')
+            {
+                buf[i] = c;
+                c = (char) fgetc(dictionary);
+                i++;
+            }
+            buf[i] = '\0';
+            i++;
+
+            insert_entry(ht, index, newEntry);
+
+            fread(&c, 1, 1, dictionary);
+
+        } while (c != -1);
+        
+
+    }
+                
+}
+
+void insert_entry(HashTable* ht, int index, HashEntry* entry)
+{
+    entry->next = NULL;
+    
+    if (ht->table[index] == NULL)
+    {
+        ht->table[index] = entry;
+    }
+    else 
+    {
+        HashEntry *current = ht->table[index];
+        while (current->next != NULL) {
+            current = current->next;
+        }
+        current->next = entry;
     }
 
-    insert(ht, buf);
-    for (int j = 1; j < i-1; j++)
-        if (buf[j-1]=='\0')
-            insert(ht, buf+j);
-            
 }
 
 
 void print_dict(HashTable* ht)
 {
-    printf("______\n");
+    int counter=0;
     for (int i = 0; i < MAX_DICT_LEN; i++)
         if (ht->table[i] != NULL)
         {
-            printf("%d - %s\n", i, ht->table[i]);
+            counter++;
+            // printf("INDEX %d", i);
+            // HashEntry* entry = ht->table[i];
+            // while (entry != NULL) {
+            //     printf("\n\tentry UID %d : %s", entry->uindex, entry->value);
+            //     entry = entry->next;
+            // }
+            // printf("\n");
         }
-    printf("______\n");
-    
 
+    printf("\n~~~TOTAL~~~\n");
+    printf("%d / %d\n\n", counter, MAX_DICT_LEN);
+
+
+    // int counter=0;
+    // for (int i = 0; i < MAX_DICT_LEN; i++)
+    //     if (ht->table[i] == NULL)
+    //     {
+    //         counter++;
+    //     }
+    // printf("Dict NULL: %d / %d\n", counter, MAX_DICT_LEN);
+    
 }
 
 
+void free_hash(HashTable *ht) {
 
-int len_sort(const char *a, const char *b)
-{
-    return strlen(a) < strlen(b) ? -1 : 1;
+    for (int i = 0; i < MAX_DICT_LEN; i++) {
+        HashEntry *current = ht->table[i];
+
+        while (current != NULL) {
+            HashEntry *temp = current;
+            current = current->next;
+            free(temp);
+        }
+        ht->table[i] = NULL; 
+    }
 }
 
 

@@ -38,13 +38,14 @@ int train(int argc, char* argv[])
 
     /// HASH
     HashTable ht;
-    ht.table = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
+    ht.table = (HashEntry**) calloc(MAX_DICT_LEN, sizeof(HashEntry*));
     initHashTable(&ht);
     ///
 
-    size_t buf_len = INIT_BUF_LEN;
-    char*  buf     = (char*) calloc(buf_len, sizeof(char));
-    char*  buf_new = buf;
+    size_t buf_len  = INIT_BUF_LEN;
+    char*  buf      = (char*) calloc(buf_len, sizeof(char));
+    char*  buf_new  = buf;
+    int    dict_len = 0;
 
     for (int i = file_piv; i < argc; i++)                                                       // Train the dictionary on each file from the argument list
     {        
@@ -56,13 +57,11 @@ int train(int argc, char* argv[])
         if ((training_set = fopen(file_path, "r")) != NULL)
         {    
             
-            // DEBUG
+            // // DEBUG
             
             int charnum = 0; 
             struct stat fs;
             fstat(fileno(training_set), &fs);
-
-            
 
 
             if(dir) free(file_path);
@@ -84,12 +83,16 @@ int train(int argc, char* argv[])
                 }
                 ///
 
+                if (dict_len == MAX_DICT_LEN)
+                    break;
+
                 index = find_phrase(&ht, parent_index, c);                               // Recursive search for the longest overlap between
 
                 if (index != NULL)
                     parent_index = index;
                 else
                 {
+                    dict_len++;
                     add_phrase(&buf_new, &ht, parent_index, c);
                     parent_index = NULL;
                 }
@@ -113,10 +116,11 @@ int train(int argc, char* argv[])
     }
 
     save_dict(dictionary, &ht);
-    // print_dict(&ht);
+    print_dict(&ht);
+
     fclose(dictionary);
     free(buf);
-    free(ht.table);
+    free_hash(&ht);
 
     return 0;
 }
@@ -175,12 +179,26 @@ char* print_to_buf(char* buf_new, char* str)
     return buf_new+i;
 }
 
+
 void save_dict(FILE* dictionary, HashTable* ht)
 {
+    char sep = -1;
     for (int i = 0; i < MAX_DICT_LEN; i++)
         if (ht->table[i] != NULL)
         {
-            fputs(ht->table[i], dictionary);
-            fputc('\0', dictionary);
+            fwrite(&i, sizeof(int), 1, dictionary);
+            HashEntry* entry = ht->table[i];
+            while (entry != NULL) {
+                fwrite(&(entry->uindex), sizeof(int), 1, dictionary);
+                fputs(entry->value, dictionary);
+                fputc('\0', dictionary);
+                
+                if (entry->next == NULL)
+                    fwrite(&sep, 1, 1, dictionary);
+                else
+                    fputc('\0', dictionary);   
+                
+                entry = entry->next;
+            }
         }
 }

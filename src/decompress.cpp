@@ -45,7 +45,7 @@ int decompress(int argc, char* argv[])
     char*  buf     = (char*) calloc(buf_len, sizeof(char)); 
 
     HashTable ht;
-    ht.table = (char**) calloc(MAX_DICT_LEN, sizeof(char*));
+    ht.table = (HashEntry**) calloc(MAX_DICT_LEN, sizeof(HashEntry*));
     initHashTable(&ht);
     read_dict(dictionary, &ht, buf);
     // print_dict(&ht);
@@ -94,7 +94,7 @@ int decompress(int argc, char* argv[])
 
     fclose(dictionary);
     free(buf);
-    free(ht.table);
+    free_hash(&ht);
 
     return 0; 
 }
@@ -102,8 +102,8 @@ int decompress(int argc, char* argv[])
 
 int write_from_dict(FILE* file, HashTable* ht, int parent_index, char c)
 {
-    if (parent_index != -1)                                                                     // dictionary
-         fputs(ht->table[parent_index], file);
+    if (parent_index != -1)  
+         fputs(ht->table[parent_index]->value, file);
  
     if(c) fputc(c, file);
 
