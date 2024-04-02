@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NUM_FILES 30
-#define CHARS_PER_FILE 100000
+#define NUM_FILES 100
+#define CHARS_PER_FILE 1000000
 #define MIN_ASCII 32
 #define MAX_ASCII 127
 

@@ -1,8 +1,8 @@
 #include "lib.hpp"
+#include "hash.cpp"
+#include "train.cpp"
 #include "compress.cpp"
 #include "decompress.cpp"
-#include "train.cpp"
-#include "hash.cpp"
 
 
 char* find_phrase(HashTable* ht, char* parent_index, char c)
@@ -12,6 +12,7 @@ char* find_phrase(HashTable* ht, char* parent_index, char c)
     {
         char str[MAX_STRING_LEN] = "";
         strcat(str, parent_index);
+        
         char charStr[2] = {c, '\0'};
         strcat(str,charStr);
         
@@ -19,7 +20,6 @@ char* find_phrase(HashTable* ht, char* parent_index, char c)
         if (ind != NULL) //
             return ind;
     }
-
     else
     {
         char charStr[2] = {c, '\0'};
@@ -82,11 +82,10 @@ char* retrieve(HashTable *ht, const char *key) {
 
 int replace(HashTable* ht, char* key)
 {
-    unsigned int index = hash(key);
+    unsigned int index = fnv1_hash(key);
     unsigned int nextIndex = (index + 1) % MAX_DICT_LEN;
-    unsigned int prevIndex = (index - 1) % MAX_DICT_LEN;
 
-    while (nextIndex != prevIndex)
+    while (nextIndex != index)
         if (ht->table[nextIndex]==NULL)
         {
             HashEntry *newEntry = (HashEntry *)malloc(sizeof(HashEntry));
@@ -99,26 +98,9 @@ int replace(HashTable* ht, char* key)
             newEntry->next = NULL;
             ht->table[nextIndex] = newEntry;
             return nextIndex;
-        }  
-        else if (ht->table[prevIndex]==NULL)
-        {
-            HashEntry *newEntry = (HashEntry *)malloc(sizeof(HashEntry));
-            if (newEntry == NULL) {
-                fprintf(stderr, "Memory allocation failed\n");
-                exit(1);
-            }
-            newEntry->value = key;
-            newEntry->uindex = prevIndex;
-            newEntry->next = NULL;
-            ht->table[prevIndex] = newEntry;
-            return prevIndex;
         }
         else
-        {
             nextIndex = (nextIndex + 1) % MAX_DICT_LEN;
-            prevIndex = (prevIndex - 1) % MAX_DICT_LEN;
-        }
-
 
     return 0;
 }
@@ -128,15 +110,21 @@ int get_index (HashTable* ht, const char* key)
 {
     if (key == NULL)
         return -1;
+    if (strlen(key) < 4)
+        return -2;
+
     unsigned int index = fnv1_hash(key);
+    
     HashEntry* entry = ht->table[index];
     while (entry != NULL) {
         if (strcmp(entry->value, key) == 0) {
+            
             return entry->uindex;
         }
         entry = entry->next;
     }
 
+    
     return -1;
 }
 
@@ -209,7 +197,6 @@ void print_dict(HashTable* ht)
         if (ht->table[i] != NULL)
         {
             counter++;
-            // printf("INDEX %d", i);
             // HashEntry* entry = ht->table[i];
             // while (entry != NULL) {
             //     printf("\n\tentry UID %d : %s", entry->uindex, entry->value);
@@ -220,15 +207,6 @@ void print_dict(HashTable* ht)
 
     printf("\n~~~TOTAL~~~\n");
     printf("%d / %d\n\n", counter, MAX_DICT_LEN);
-
-
-    // int counter=0;
-    // for (int i = 0; i < MAX_DICT_LEN; i++)
-    //     if (ht->table[i] == NULL)
-    //     {
-    //         counter++;
-    //     }
-    // printf("Dict NULL: %d / %d\n", counter, MAX_DICT_LEN);
     
 }
 
@@ -247,6 +225,40 @@ void free_hash(HashTable *ht) {
     }
 }
 
+
+
+void code(FILE* file, int index)
+{
+    if (index != -1)
+    {
+        char indicator = -1;
+        fwrite(&indicator, 1, 1, file);
+
+        unsigned int byte1 = (index >> 16) & 0xFF;
+        unsigned int byte2 = (index >> 8) & 0xFF;
+        unsigned int byte3 = index & 0xFF;
+
+        fwrite(&byte1, 1, 1, file);
+        fwrite(&byte2, 1, 1, file);
+        fwrite(&byte3, 1, 1, file);
+    }
+
+}
+
+int decode(FILE* file)
+{
+    unsigned int byte1 = 0;
+    unsigned int byte2 = 0;
+    unsigned int byte3 = 0;
+
+    fread(&byte1, 1, 1, file);
+    fread(&byte2, 1, 1, file);
+    fread(&byte3, 1, 1, file);
+    
+    int composed_int = (byte1 << 16) | (byte2 << 8) | byte3;
+
+    return composed_int;
+}
 
 
 int setmode(int argc, char* argv[])

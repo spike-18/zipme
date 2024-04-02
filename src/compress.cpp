@@ -67,7 +67,7 @@ int compress(int argc, char* argv[])
         if ((file = fopen(argv[i], "r")) != NULL && (compressed_file = fopen(file_name, "w+")) != NULL)
         {
 
-            int    code = 0;
+            int    num = 0;
             char*  index        = NULL;                                                             // index == -1 is reserved for 
             char*  parent_index = NULL;                                                             // missing prefix in dictionary
 
@@ -81,9 +81,17 @@ int compress(int argc, char* argv[])
                     parent_index = index;
                 else
                 {
-                    code = get_index(&ht, parent_index);
-                    fwrite(&code, 1, INDEX_LN, compressed_file);
-                    fwrite(&c, 1, sizeof(char), compressed_file);
+                    num = get_index(&ht, parent_index);
+                    
+                    if (num != -2)
+                        code(compressed_file, num);
+                    else
+                        fputs(parent_index, compressed_file);
+
+                    fwrite(&c, 1, 1, compressed_file);
+                    
+
+
                     parent_index = NULL;
                 }
                 c = (char) fgetc(file);
@@ -91,14 +99,16 @@ int compress(int argc, char* argv[])
 
             if (parent_index != NULL)
             {
-                char escape = '\0';
-                code = get_index(&ht, parent_index);
-                fwrite(&code, 1, INDEX_LN, compressed_file);
-                fwrite(&escape, 1, sizeof(char), compressed_file);
+                num = get_index(&ht, parent_index);
+                
+                code(compressed_file, num);
+
+                // fwrite(&code, 1, INDEX_LN, compressed_file);
+                // fwrite(&escape, 1, sizeof(char), compressed_file);
             }
 
-            int eof_index = -2;                                                                 // index == -2 is reserved for
-            fwrite(&eof_index, 1, INDEX_LN, compressed_file);                                   // end of the file
+            char eof_index = -2;                                                                 // index == -2 is reserved for
+            fwrite(&eof_index, 1, 1, compressed_file);                                   // end of the file
             fclose(compressed_file);
             fclose(file);
 

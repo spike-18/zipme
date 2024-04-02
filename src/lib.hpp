@@ -1,16 +1,17 @@
 #pragma once
 
 #include <stdio.h>
+#include <ctype.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <assert.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <limits.h>
-#include <sys/stat.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <sys/stat.h>
+
 
 #define STD "\033[1;0m"
 #define BLK "\u001b[30;1m"
@@ -35,17 +36,17 @@ enum MODES {
     TRAIN       = 2
 };
 
-
 enum ERRORS {
-    NO_INPUT_FILE   = -1,
-    FILE_OPEN_ERROR = -2,
-    NO_DICT         = -3,
-    INV_SYNT        = -4,
-    NO_DIRECTORY    = -5,
-    MULT_DIR        = -6,
-    INDEX_LEN_ERROR = -7,
-    DICT_LEN_EXIT   = -8,
+    NO_INPUT_FILE,
+    FILE_OPEN_ERROR,
+    NO_DICT,
+    INV_SYNT,
+    NO_DIRECTORY,
+    MULT_DIR,
+    INDEX_LEN_ERROR,
+    DICT_LEN_EXIT
 };
+
 
 
 typedef struct HashEntry {
@@ -54,39 +55,34 @@ typedef struct HashEntry {
     struct HashEntry *next;     // For handling collisions with chaining
 } HashEntry;
 
-
 typedef struct {
     HashEntry **table;
 } HashTable;
 
 
 
-
-typedef int (*CompareFunction)(const char *, const char *);
-
-
-void            print_help          (void);
-void            report              (int error);
-void            checkargs           (int argc, char* argv[]);
-int             setmode             (int argc, char* argv[]);
-int             train               (int argc, char* argv[]);
-int             compress            (int argc, char* argv[]);
-int             decompress          (int argc, char* argv[]);
-char*           concatenate         (const char* dir, const char* name);
-int             write_from_dict     (FILE* file, HashTable* ht, int parent_index, char c);
-void            add_phrase          (char** buf_new, HashTable* ht, char* parent_index, char c);
-char*           print_to_buf        (char* buf_new, char* str);
-void            save_dict           (FILE* dictionary, HashTable* ht);
-void            print_dict          (HashTable* ht);
-void            read_dict           (FILE* dictionary, HashTable* ht, char* buf);
-int             len_sort            (const char *a, const char *b);
-void            initHashTable       (HashTable *ht);
-void            free_hash           (HashTable* ht);
-void            insert              (HashTable *ht, char *key);
-int             replace             (HashTable* ht, char* key);
-char*           retrieve            (HashTable *ht, const char *key);
-int             get_index           (HashTable* ht, const char* key);
-char*           find_phrase         (HashTable* ht, char* parent_index, char c);
-void            insert_entry        (HashTable* ht, int index, HashEntry* entry);
-unsigned int    hash                (const char *key);
-uint32_t        fnv1_hash           (const char *key);
+int          train           (int argc, char* argv[]);
+int          setmode         (int argc, char* argv[]);
+int          compress        (int argc, char* argv[]);
+int          decompress      (int argc, char* argv[]);
+int          replace         (HashTable* ht, char* key);
+int          get_index       (HashTable* ht, const char* key);
+char*        print_to_buf    (char* buf_new, char* str);
+char*        retrieve        (HashTable *ht, const char *key);
+char*        concatenate     (const char* dir, const char* name);
+char*        find_phrase     (HashTable* ht, char* parent_index, char c);
+void         print_help      (void);
+void         report          (int error);
+void         print_dict      (HashTable* ht);
+void         free_hash       (HashTable* ht);
+void         initHashTable   (HashTable *ht);
+void         checkargs       (int argc, char* argv[]);
+void         insert          (HashTable *ht, char *key);
+void         save_dict       (FILE* dictionary, HashTable* ht);
+void         read_dict       (FILE* dictionary, HashTable* ht, char* buf);
+void         add_phrase      (char** buf_new, HashTable* ht, char* parent_index, char c);
+void         insert_entry    (HashTable* ht, int index, HashEntry* entry);
+uint32_t     fnv1_hash       (const char *key);
+unsigned int hash            (const char *key);
+void         code            (FILE* file, int index);
+int          decode          (FILE* file);

@@ -64,14 +64,20 @@ int decompress(int argc, char* argv[])
 
             while (1)
             {
-                fread(&parent_index, 1, INDEX_LN, compressed_file);
                 
-                if (parent_index == -2)
+                fread(&c, 1, 1, compressed_file);
+                
+                if (c == -2)
                     break;
 
-                fread(&c, 1, sizeof(char), compressed_file);
-
-                write_from_dict(decompressed_file, &ht, parent_index, c);
+                if (c == -1)
+                {
+                    parent_index = decode(compressed_file);
+                    fputs(ht.table[parent_index]->value, decompressed_file);
+                }
+                else
+                    fputc(c, decompressed_file);
+                
             }
 
             fclose(compressed_file);
@@ -99,13 +105,3 @@ int decompress(int argc, char* argv[])
     return 0; 
 }
 
-
-int write_from_dict(FILE* file, HashTable* ht, int parent_index, char c)
-{
-    if (parent_index != -1)  
-         fputs(ht->table[parent_index]->value, file);
- 
-    if(c) fputc(c, file);
-
-    return 0;
-}

@@ -19,12 +19,3 @@ uint32_t fnv1_hash(const char *key) {
     return hash % MAX_DICT_LEN;
 }
 
-
-
-unsigned int hash(const char *key) {
-    unsigned int hashVal = 0;
-    while (*key) {
-        hashVal = (hashVal << 5) + *key++;
-    }
-    return hashVal % MAX_DICT_LEN;
-}

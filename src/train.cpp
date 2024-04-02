@@ -50,23 +50,22 @@ int train(int argc, char* argv[])
     for (int i = file_piv; i < argc; i++)                                                 // Train the dictionary on each file from the argument list
     {        
 
-        char* file_path = (dir == NULL) ? strdup(argv[file_piv]) : concatenate(dir, argv[file_piv]); // Allocate memory only when using concatenate
+        char* file_path = (dir == NULL) ? strdup(argv[i]) : concatenate(dir, argv[i]);
+        
         printf("FILE %d: %20s\t", i-file_piv, argv[i]);
 
         if ((training_set = fopen(file_path, "r")) != NULL)
         {    
-            
 
             char*  index        = NULL;                                                             // index == -1 is reserved for missing prefix in dictionary
             char*  parent_index = NULL;
             
-            char c = (char) fgetc(training_set);                                                 
-            
+            char c = (char) fgetc(training_set);     
 
             while (c != EOF)
             {
 
-                if (dict_len == MAX_DICT_LEN)
+                if (dict_len >= MAX_DICT_LEN)
                     break;
 
                 index = find_phrase(&ht, parent_index, c);                               // Recursive search for the longest overlap between
@@ -133,22 +132,25 @@ char* concatenate(const char* dir, const char* name)
 {
     if(dir)
     {
-        char appendix[2];
-
-        appendix[0] = '/';
-        appendix[1] = '\0';
-
-        char* _dir = strdup(dir);
-
-        _dir = strcat(_dir, appendix);
-
-        int i = 0;
-        while (_dir[i] != '\0')
-            i++;
-
-        _dir[i-1] = (_dir[i-2] == '/') ? '\0' : _dir[i-1];          // If _dir contains '/' symbol, leave it, append otherwise
+        size_t dir_len = strlen(dir);
+        size_t nam_len = strlen(name);
         
-        return strcat(_dir, name);   
+        char* _dir = (char*) calloc(dir_len+nam_len+2, 1);
+        _dir[dir_len+nam_len+1] = '\0';
+
+        strcpy(_dir, dir);
+        if (_dir[dir_len-1] != '/')
+        {
+            _dir[dir_len] = '/';
+            strcpy(_dir+dir_len+1, name);
+        }
+        else
+        {
+            _dir[dir_len] = '/';
+            strcpy(_dir+dir_len, name);
+        }
+
+        return _dir;   
     
     }
     else
