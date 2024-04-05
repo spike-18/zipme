@@ -247,11 +247,17 @@ void code(FILE* file, int index)
 
 int decode(FILE* file)
 {
-    unsigned int byte1 = 0;
+
+    char c = 0;
+    fread(&c, 1, 1, file);
+
+    if (c == -2)
+        return -2;
+        
+    unsigned int byte1 = (unsigned int) c;
     unsigned int byte2 = 0;
     unsigned int byte3 = 0;
 
-    fread(&byte1, 1, 1, file);
     fread(&byte2, 1, 1, file);
     fread(&byte3, 1, 1, file);
     

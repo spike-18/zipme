@@ -73,6 +73,10 @@ int decompress(int argc, char* argv[])
                 if (c == -1)
                 {
                     parent_index = decode(compressed_file);
+                    
+                    if (parent_index == -2)
+                        break;
+
                     fputs(ht.table[parent_index]->value, decompressed_file);
                 }
                 else
