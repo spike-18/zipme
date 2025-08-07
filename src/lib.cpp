@@ -335,7 +335,7 @@ void report(int error)
         printf("No dictionary file proceeded.\n"); 
         break;
     case INV_SYNT:
-        printf("Invalid syntax. Type 'zipme -h' for help.\n"); 
+        printf("Invalid syntax. Type 'zipx -h' for help.\n"); 
         break;
     case NO_DIRECTORY:
         printf("Wrong directory proceeded to './train.sh'.\n"); 
@@ -359,7 +359,7 @@ void report(int error)
 
 void print_help()
 {
-    printf( "Usage: ./zipme -D [DICT_FILE] [OPTION] [FILE]...\n\n"
+    printf( "Usage: ./zipx -D [DICT_FILE] [OPTION] [FILE]...\n\n"
             "Default dictioanary is default.dict (if -D is omitted).\n\n"
             "Options:\n"
             "%5s-h\t\thelp\n"
@@ -370,10 +370,10 @@ void print_help()
             "\nUse 'train.sh' script to train with all files from directory."
             "\n"
             "\nExamples:"
-            "\n\t./zipme -t kit kat"
-            "\n\t./zipme tic tac toe"
-            "\n\t./zipme -d kit kat"
-            "\n\t./zipme -D my_dict -d frkt.txt"
+            "\n\t./zipx -t kit kat"
+            "\n\t./zipx tic tac toe"
+            "\n\t./zipx -d kit kat"
+            "\n\t./zipx -D my_dict -d frkt.txt"
             "\n", " ", " ", " "
     );
 }
